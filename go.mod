@@ -1,10 +1,11 @@
-module github.com/francoispqt/gojay
+module github.com/untillpro/gojay
 
 go 1.12
 
 require (
 	cloud.google.com/go v0.37.0 // indirect
 	github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23
+	github.com/francoispqt/gojay v1.2.13
 	github.com/go-errors/errors v1.0.1
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/json-iterator/go v1.1.6
@@ -14,6 +15,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/stretchr/testify v1.2.2
+	github.com/valyala/bytebufferpool v1.0.0
 	github.com/viant/assertly v0.4.8
 	github.com/viant/toolbox v0.24.0
 	golang.org/x/crypto v0.0.0-20190313024323-a1f597ede03a // indirect
