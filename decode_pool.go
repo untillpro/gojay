@@ -62,3 +62,55 @@ func (dec *Decoder) Release() {
 	dec.isPooled = 1
 	decPool.Put(dec)
 }
+
+// ByteBuffer
+
+const (
+	defCap = 1024
+)
+
+type ByteBuffer struct {
+	B []byte
+
+	isReleased bool
+}
+
+func (b *ByteBuffer) Release() {
+	putBytes(b)
+}
+
+func (b *ByteBuffer) Set(p []byte) {
+	b.B = append(b.B[:0], p...)
+}
+
+func (b *ByteBuffer) Len() int {
+	return len(b.B)
+}
+
+//Release s.e.
+var bytesPool = sync.Pool{
+	New: func() interface{} {
+		return &ByteBuffer{B: make([]byte, defCap)}
+	},
+}
+
+func getBytes(l int) (b *ByteBuffer) {
+	b = bytesPool.Get().(*ByteBuffer)
+
+	if cap(b.B) < l {
+		b.B = make([]byte, l)
+	} else {
+		b.B = b.B[:l]
+	}
+
+	b.isReleased = false
+	return b
+}
+
+func putBytes(b *ByteBuffer) {
+	if !b.isReleased {
+
+		b.isReleased = true
+		bytesPool.Put(b)
+	}
+}
