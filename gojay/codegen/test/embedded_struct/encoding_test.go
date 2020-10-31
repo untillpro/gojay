@@ -2,10 +2,11 @@ package embedded_struct
 
 import (
 	"bytes"
+	"testing"
+
 	"github.com/francoispqt/gojay"
 	"github.com/stretchr/testify/assert"
 	"github.com/viant/assertly"
-	"testing"
 )
 
 func TestMessage_Unmarshal(t *testing.T) {
@@ -47,8 +48,9 @@ func TestMessage_Unmarshal(t *testing.T) {
 
 	var err error
 	var data = []byte(input)
-	message := &Message{}
-	err = gojay.UnmarshalJSONObject(data, message)
+  message := &Message{}
+  err = gojay.UnmarshalJSONObject(data, message)
+  message.Payload = []byte{} // Payload is decoded by EmbeddedJSON(), so result is `""`, not ``
 	assert.Nil(t, err)
 	assertly.AssertValues(t, input, message)
 }
@@ -93,12 +95,14 @@ func TestMessage_Marshal(t *testing.T) {
 	var err error
 	var data = []byte(input)
 	message := &Message{}
-	err = gojay.UnmarshalJSONObject(data, message)
+  err = gojay.UnmarshalJSONObject(data, message)
+  message.Payload = []byte{} // Payload is decoded by EmbeddedJSON(), so result is `""`, not ``
 	assert.Nil(t, err)
 	assertly.AssertValues(t, input, message)
 	var writer = new(bytes.Buffer)
 
-	encoder := gojay.NewEncoder(writer)
+  encoder := gojay.NewEncoder(writer)
+  message.Payload = []byte(`""`) // backward
 	err = encoder.Encode(message)
 	assert.Nil(t, err)
 	var JSON = writer.String()
