@@ -199,6 +199,95 @@ func (dec *Decoder) decodeObjectNull(v interface{}) (int, error) {
 	return 0, dec.raiseInvalidJSONErr(dec.cursor)
 }
 
+func (dec *Decoder) decodeObjectOrNull(nKeys int, objectCreationFunc func() UnmarshalerJSONObject) (int, error) {
+	for ; dec.cursor < dec.length || dec.read(); dec.cursor++ {
+		switch dec.data[dec.cursor] {
+		case ' ', '\n', '\t', '\r', ',':
+		case '{':
+			dec.cursor = dec.cursor + 1
+			// if keys is zero we will parse all keys
+			// we run two loops for micro optimization
+			var j UnmarshalerJSONObject
+			if nKeys == 0 {
+				for dec.cursor < dec.length || dec.read() {
+					k, done, err := dec.nextKey()
+					if err != nil {
+						return 0, err
+					} else if done {
+						return dec.cursor, nil
+					}
+					if j == nil {
+						j = objectCreationFunc()
+					}
+					err = j.UnmarshalJSONObject(dec, k)
+					if err != nil {
+						dec.err = err
+						return 0, err
+					} else if dec.called&1 == 0 {
+						err := dec.skipData()
+						if err != nil {
+							return 0, err
+						}
+					} else {
+						dec.keysDone++
+					}
+					dec.called &= 0
+				}
+			} else {
+				for (dec.cursor < dec.length || dec.read()) && dec.keysDone < nKeys {
+					k, done, err := dec.nextKey()
+					if err != nil {
+						return 0, err
+					} else if done {
+						return dec.cursor, nil
+					}
+					if j == nil {
+						j = objectCreationFunc()
+					}
+					err = j.UnmarshalJSONObject(dec, k)
+					if err != nil {
+						dec.err = err
+						return 0, err
+					} else if dec.called&1 == 0 {
+						err := dec.skipData()
+						if err != nil {
+							return 0, err
+						}
+					} else {
+						dec.keysDone++
+					}
+					dec.called &= 0
+				}
+			}
+			// will get to that point when keysDone is not lower than keys anymore
+			// in that case, we make sure cursor goes to the end of object, but we skip
+			// unmarshalling
+			if dec.child&1 != 0 {
+				end, err := dec.skipObject()
+				dec.cursor = end
+				return dec.cursor, err
+			}
+			return dec.cursor, nil
+		case 'n':
+			dec.cursor++
+			err := dec.assertNull()
+			if err != nil {
+				return 0, err
+			}
+			return dec.cursor, nil
+		default:
+			// can't unmarshal to struct
+			dec.err = dec.makeInvalidUnmarshalErr((UnmarshalerJSONObject)(nil))
+			err := dec.skipData()
+			if err != nil {
+				return 0, err
+			}
+			return dec.cursor, nil
+		}
+	}
+	return 0, dec.raiseInvalidJSONErr(dec.cursor)
+}
+
 func (dec *Decoder) skipObject() (int, error) {
 	var objectsOpen = 1
 	var objectsClosed = 0
@@ -396,6 +485,25 @@ func (dec *Decoder) ObjectNull(v interface{}) error {
 	dec.called = 0
 	dec.child |= 1
 	newCursor, err := dec.decodeObjectNull(v)
+	if err != nil {
+		return err
+	}
+	dec.cursor = newCursor
+	dec.keysDone = initialKeysDone
+	dec.child = initialChild
+	dec.called |= 1
+	return nil
+}
+
+// ObjectOrNull is alloc-free version of ObjectNull()
+// objectCreationFunc() will be called only if actually there is an object to read
+func (dec *Decoder) ObjectOrNull(nKeys int, objectCreationFunc func() UnmarshalerJSONObject) error {
+	initialKeysDone := dec.keysDone
+	initialChild := dec.child
+	dec.keysDone = 0
+	dec.called = 0
+	dec.child |= 1
+	newCursor, err := dec.decodeObjectOrNull(nKeys, objectCreationFunc)
 	if err != nil {
 		return err
 	}

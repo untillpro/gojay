@@ -477,6 +477,260 @@ func TestDecoderBoolNull(t *testing.T) {
 	})
 }
 
+func TestDecoderBoolOrNull(t *testing.T) {
+	testCases := []struct {
+		name           string
+		json           string
+		expectedResult bool
+		expectations   func(t *testing.T, v bool, isNull bool, err error)
+	}{
+		{
+			name: "true-basic",
+			json: "true",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.Nil(t, err, "err should be nil")
+				assert.True(t, v, "result should be true")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "false-basic",
+			json: "false",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.Nil(t, err, "err should be nil")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "null-basic",
+			json: "null",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.Nil(t, err, "err should be nil")
+				assert.False(t, v, "result should be false")
+				assert.True(t, isNull, "isNull should be true")
+			},
+		},
+		{
+			name: "true-error",
+			json: "taue",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "true-error2",
+			json: "trae",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "true-error3",
+			json: "trua",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "true-error4",
+			json: "truea",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "true-error5",
+			json: "t",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "true-error6",
+			json: "a",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "false-error",
+			json: "fulse",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "false-error2",
+			json: "fause",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "false-error3",
+			json: "falze",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "false-error4",
+			json: "falso",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "false-error5",
+			json: "falsea",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "false-error6",
+			json: "f",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "false-error7",
+			json: "a",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "null-error",
+			json: "nall",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "null-error2",
+			json: "nual",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "null-error3",
+			json: "nula",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "null-error4",
+			json: "nulle",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "null-error5",
+			json: "n",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "null-error6",
+			json: "a",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.NotNil(t, err, "err should be not nil")
+				assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "null-skip",
+			json: "{}",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.Nil(t, err, "err should be nil")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+		{
+			name: "null-skip",
+			json: "",
+			expectations: func(t *testing.T, v bool, isNull bool, err error) {
+				assert.Nil(t, err, "err should not be nil")
+				assert.False(t, v, "result should be false")
+				assert.False(t, isNull, "isNull should be false")
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			dec := borrowDecoder(strings.NewReader(testCase.json), 0)
+			defer dec.Release()
+			val, isNull, err := dec.BoolOrNull()
+			testCase.expectations(t, val, isNull, err)
+		})
+	}
+}
+
 func TestDecoderBoolDecoderAPI(t *testing.T) {
 	var v bool
 	dec := BorrowDecoder(strings.NewReader("true"))

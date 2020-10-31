@@ -667,6 +667,36 @@ func (dec *Decoder) decodeInt32Null(v **int32) error {
 	return dec.raiseInvalidJSONErr(dec.cursor)
 }
 
+func (dec *Decoder) decodeInt32OrNull() (val int32, isNull bool, err error) {
+	for ; dec.cursor < dec.length || dec.read(); dec.cursor++ {
+		switch c := dec.data[dec.cursor]; c {
+		case ' ', '\n', '\t', '\r', ',':
+			continue
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			val, err = dec.getInt32()
+			return
+		case '-':
+			dec.cursor = dec.cursor + 1
+			if val, err = dec.getInt32Negative(); err == nil {
+				val = -val
+			}
+			return
+		case 'n':
+			dec.cursor++
+			if err = dec.assertNull(); err == nil {
+				isNull = true
+			}
+			return
+		default:
+			dec.err = dec.makeInvalidUnmarshalErr(int32(0))
+			err = dec.skipData()
+			return
+		}
+	}
+	err =  dec.raiseInvalidJSONErr(dec.cursor)
+	return
+}
+
 func (dec *Decoder) getInt32Negative() (int32, error) {
 	// look for following numbers
 	for ; dec.cursor < dec.length || dec.read(); dec.cursor++ {
@@ -896,6 +926,36 @@ func (dec *Decoder) decodeInt64Null(v **int64) error {
 		}
 	}
 	return dec.raiseInvalidJSONErr(dec.cursor)
+}
+
+func (dec *Decoder) decodeInt64OrNull() (val int64, isNull bool, err error) {
+	for ; dec.cursor < dec.length || dec.read(); dec.cursor++ {
+		switch c := dec.data[dec.cursor]; c {
+		case ' ', '\n', '\t', '\r', ',':
+			continue
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			val, err = dec.getInt64()
+			return
+		case '-':
+			dec.cursor = dec.cursor + 1
+			if val, err = dec.getInt64Negative(); err == nil {
+				val = -val
+			}
+			return
+		case 'n':
+			dec.cursor++
+			if err = dec.assertNull(); err == nil {
+				isNull = true
+			}
+			return
+		default:
+			dec.err = dec.makeInvalidUnmarshalErr(int64(0))
+			err = dec.skipData()
+			return
+		}
+	}
+	err = dec.raiseInvalidJSONErr(dec.cursor)
+	return
 }
 
 func (dec *Decoder) getInt64Negative() (int64, error) {
@@ -1315,6 +1375,14 @@ func (dec *Decoder) Int32Null(v **int32) error {
 	return nil
 }
 
+// Int32OrNull is alloc-free version of Int32Null
+func (dec *Decoder) Int32OrNull() (val int32, isNull bool, err error) {
+	if val, isNull, err = dec.decodeInt32OrNull(); err == nil {
+		dec.called |= 1
+	}
+	return
+}
+
 // Int64 decodes the JSON value within an object or an array to an *int.
 // If next key value overflows int64, an InvalidUnmarshalError error will be returned.
 func (dec *Decoder) Int64(v *int64) error {
@@ -1335,4 +1403,12 @@ func (dec *Decoder) Int64Null(v **int64) error {
 	}
 	dec.called |= 1
 	return nil
+}
+
+// Int64OrNull is alloc-free version of Int64Null
+func (dec *Decoder) Int64OrNull() (val int64, isNull bool, err error) {
+	if val, isNull, err = dec.decodeInt64OrNull(); err == nil {
+		dec.called |= 1
+	}
+	return
 }

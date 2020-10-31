@@ -91,6 +91,37 @@ func (dec *Decoder) decodeStringNull(v **string) error {
 	return nil
 }
 
+func (dec *Decoder) decodeStringBytesOrNull() (val []byte, isNull bool, err error) {
+	for ; dec.cursor < dec.length || dec.read(); dec.cursor++ {
+		switch dec.data[dec.cursor] {
+		case ' ', '\n', '\t', '\r', ',':
+			// is string
+			continue
+		case '"':
+			dec.cursor++
+			var start, end int
+			if start, end, err = dec.getString(); err == nil {
+				// we do minus one to remove the last quote
+				val = dec.data[start : end-1]
+				dec.cursor = end
+			}
+			return
+		// is nil
+		case 'n':
+			dec.cursor++
+			if err = dec.assertNull(); err == nil {
+				isNull = true
+			}
+			return
+		default:
+			dec.err = dec.makeInvalidUnmarshalErr("")
+			err = dec.skipData()
+			return
+		}
+	}
+	return
+}
+
 func (dec *Decoder) parseEscapedString() error {
 	if dec.cursor >= dec.length && !dec.read() {
 		return dec.raiseInvalidJSONErr(dec.cursor)
@@ -257,4 +288,14 @@ func (dec *Decoder) StringNull(v **string) error {
 	}
 	dec.called |= 1
 	return nil
+}
+
+// StringBytesOrNull is alloc-free version of StringNull(). Returns a string as bytes
+func (dec *Decoder) StringBytesOrNull() (val []byte, isNull bool, err error) {
+	if val, isNull, err = dec.decodeStringBytesOrNull(); err == nil {
+		if err = dec.err; err == nil {
+			dec.called |= 1
+		}
+	}
+	return
 }
