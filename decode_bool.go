@@ -96,6 +96,36 @@ func (dec *Decoder) decodeBoolNull(v **bool) error {
 	return nil
 }
 
+func (dec *Decoder) decodeBoolOrNull() (val bool, isNull bool, err error) {
+	for ; dec.cursor < dec.length || dec.read(); dec.cursor++ {
+		switch dec.data[dec.cursor] {
+		case ' ', '\n', '\t', '\r', ',':
+			continue
+		case 't':
+			dec.cursor++
+			if err = dec.assertTrue(); err == nil {
+				val = true
+			}
+			return
+		case 'f':
+			dec.cursor++
+			err = dec.assertFalse()
+			return
+		case 'n':
+			dec.cursor++
+			if err = dec.assertNull(); err == nil {
+				isNull = true
+			}
+			return
+		default:
+			dec.err = dec.makeInvalidUnmarshalErr(true)
+			err = dec.skipData()
+			return
+		}
+	}
+	return
+}
+
 func (dec *Decoder) assertTrue() error {
 	i := 0
 	for ; dec.cursor < dec.length || dec.read(); dec.cursor++ {
@@ -238,4 +268,12 @@ func (dec *Decoder) BoolNull(v **bool) error {
 	}
 	dec.called |= 1
 	return nil
+}
+
+// BoolOrNull is alloc-free analogue of BoolNull
+func (dec *Decoder) BoolOrNull() (val bool, isNull bool, err error) {
+	if val, isNull, err = dec.decodeBoolOrNull(); err == nil {
+		dec.called |= 1
+	}
+	return
 }

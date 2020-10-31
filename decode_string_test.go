@@ -642,6 +642,299 @@ func TestDecoderStringNull(t *testing.T) {
 		assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
 	})
 }
+
+func TestDecoderStringBytesOrNull(t *testing.T) {
+	testCases := []struct {
+		name           string
+		json           string
+		expectedResult []byte
+		err            bool
+		errType        interface{}
+		isNull         bool
+	}{
+		{
+			name:           "basic-string",
+			json:           `"string"`,
+			expectedResult: []byte("string"),
+		},
+		{
+			name:           "string-solidus",
+			json:           `"\/"`,
+			expectedResult: []byte("/"),
+		},
+		{
+			name:           "basic-string",
+			json:           ``,
+			expectedResult: nil,
+		},
+		{
+			name:           "basic-string",
+			json:           `""`,
+			expectedResult: []byte(""),
+		},
+		{
+			name:           "basic-string2",
+			json:           `"hello world!"`,
+			expectedResult: []byte("hello world!"),
+		},
+		{
+			name:           "escape-control-char",
+			json:           `"\n"`,
+			expectedResult: []byte("\n"),
+		},
+		{
+			name:           "escape-control-char",
+			json:           `"\\n"`,
+			expectedResult: []byte(`\n`),
+		},
+		{
+			name:           "escape-control-char",
+			json:           `"\t"`,
+			expectedResult: []byte("\t"),
+		},
+		{
+			name:           "escape-control-char",
+			json:           `"\\t"`,
+			expectedResult: []byte(`\t`),
+		},
+		{
+			name:           "escape-control-char",
+			json:           `"\b"`,
+			expectedResult: []byte("\b"),
+		},
+		{
+			name:           "escape-control-char",
+			json:           `"\\b"`,
+			expectedResult: []byte(`\b`),
+		},
+		{
+			name:           "escape-control-char",
+			json:           `"\f"`,
+			expectedResult: []byte("\f"),
+		},
+		{
+			name:           "escape-control-char",
+			json:           `"\\f"`,
+			expectedResult: []byte(`\f`),
+		},
+		{
+			name:           "escape-control-char",
+			json:           `"\r"`,
+			expectedResult: []byte("\r"),
+		},
+		{
+			name:           "escape-control-char",
+			json:           `"\`,
+			expectedResult: []byte(""),
+			err:            true,
+		},
+		{
+			name:           "escape-control-char-solidus",
+			json:           `"\/"`,
+			expectedResult: []byte("/"),
+		},
+		{
+			name:           "escape-control-char-solidus",
+			json:           `"/"`,
+			expectedResult: []byte("/"),
+		},
+		{
+			name:           "escape-control-char-solidus-escape-char",
+			json:           `"\\/"`,
+			expectedResult: []byte(`\/`),
+		},
+		{
+			name:           "escape-control-char",
+			json:           `"\\r"`,
+			expectedResult: []byte(`\r`),
+		},
+		{
+			name:           "utf8",
+			json:           `"𠜎 𠜱 𠝹 𠱓 𠱸 𠲖 𠳏 𠳕 𠴕 𠵼 𠵿"`,
+			expectedResult: []byte("𠜎 𠜱 𠝹 𠱓 𠱸 𠲖 𠳏 𠳕 𠴕 𠵼 𠵿"),
+		},
+		{
+			name:           "utf8-code-point",
+			json:           `"\u06fc"`,
+			expectedResult: []byte(`ۼ`),
+		},
+		{
+			name:           "utf8-code-point-escaped",
+			json:           `"\\u2070"`,
+			expectedResult: []byte(`\u2070`),
+		},
+		{
+			name:           "utf8-code-point-err",
+			json:           `"\u2Z70"`,
+			expectedResult: []byte(``),
+			err:            true,
+		},
+		{
+			name:           "utf16-surrogate",
+			json:           `"\uD834\uDD1E"`,
+			expectedResult: []byte(`𝄞`),
+		},
+		{
+			name:           "utf16-surrogate",
+			json:           `"\uD834\\"`,
+			expectedResult: []byte(`�\`),
+		},
+		{
+			name:           "utf16-surrogate",
+			json:           `"\uD834\uD834"`,
+			expectedResult: []byte("�\x00\x00\x00"),
+		},
+		{
+			name:           "utf16-surrogate",
+			json:           `"\uD834"`,
+			expectedResult: []byte(`�`),
+		},
+		{
+			name:           "utf16-surrogate-err",
+			json:           `"\uD834\`,
+			expectedResult: []byte(``),
+			err:            true,
+		},
+		{
+			name:           "utf16-surrogate-err2",
+			json:           `"\uD834\uDZ1E`,
+			expectedResult: []byte(``),
+			err:            true,
+		},
+		{
+			name:           "utf16-surrogate-err3",
+			json:           `"\uD834`,
+			expectedResult: []byte(``),
+			err:            true,
+		},
+		{
+			name:           "utf16-surrogate-followed-by-control-char",
+			json:           `"\uD834\t"`,
+			expectedResult: []byte("�\t"),
+		},
+		{
+			name:           "utf16-surrogate-followed-by-control-char",
+			json:           `"\uD834\n"`,
+			expectedResult: []byte("�\n"),
+		},
+		{
+			name:           "utf16-surrogate-followed-by-control-char",
+			json:           `"\uD834\f"`,
+			expectedResult: []byte("�\f"),
+		},
+		{
+			name:           "utf16-surrogate-followed-by-control-char",
+			json:           `"\uD834\b"`,
+			expectedResult: []byte("�\b"),
+		},
+		{
+			name:           "utf16-surrogate-followed-by-control-char",
+			json:           `"\uD834\r"`,
+			expectedResult: []byte("�\r"),
+		},
+		{
+			name:           "utf16-surrogate-followed-by-control-char",
+			json:           `"\uD834\h"`,
+			expectedResult: []byte(""),
+			err:            true,
+		},
+		{
+			name:           "null",
+			json:           `null`,
+			expectedResult: []byte(""),
+			isNull:         true,
+		},
+		{
+			name:           "null-err",
+			json:           `nall`,
+			expectedResult: []byte(""),
+			err:            true,
+		},
+		{
+			name:           "escape quote err",
+			json:           `"test string \" escaped"`,
+			expectedResult: []byte(`test string " escaped`),
+		},
+		{
+			name:           "escape quote err2",
+			json:           `"test string \t escaped"`,
+			expectedResult: []byte("test string \t escaped"),
+		},
+		{
+			name:           "escape quote err2",
+			json:           `"test string \r escaped"`,
+			expectedResult: []byte("test string \r escaped"),
+		},
+		{
+			name:           "escape quote err2",
+			json:           `"test string \b escaped"`,
+			expectedResult: []byte("test string \b escaped"),
+		},
+		{
+			name:           "escape quote err",
+			json:           `"test string \n escaped"`,
+			expectedResult: []byte("test string \n escaped"),
+		},
+		{
+			name:           "escape quote err",
+			json:           `"test string \\\" escaped`,
+			expectedResult: []byte(``),
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "escape quote err",
+			json:           `"test string \\\l escaped"`,
+			expectedResult: []byte(``),
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "invalid-json",
+			json:           `invalid`,
+			expectedResult: []byte(``),
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "string-complex",
+			json:           `  "string with spaces and \"escape\"d \"quotes\" and escaped line returns \n and escaped \\\\ escaped char"`,
+			expectedResult: []byte("string with spaces and \"escape\"d \"quotes\" and escaped line returns \n and escaped \\\\ escaped char"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			dec := BorrowDecoder(strings.NewReader(testCase.json))
+			defer dec.Release()
+			strBytes, isNull, err := dec.decodeStringBytesOrNull()
+			if testCase.err {
+				if err == nil {
+					err = dec.err
+				}
+				assert.NotNil(t, err, "err should not be nil")
+				if testCase.errType != nil {
+					assert.IsType(t, testCase.errType, err, "err should of the given type")
+				}
+				return
+			}
+			assert.Nil(t, err, "Err must be nil")
+			if testCase.isNull {
+				assert.True(t, isNull)
+			} else {
+				assert.False(t, isNull)
+				assert.Equal(t, testCase.expectedResult, strBytes, fmt.Sprintf("v must be equal to %s", testCase.expectedResult))
+			}
+		})
+	}
+	t.Run("decoder-api-invalid-json2", func(t *testing.T) {
+		var v = new(string)
+		var dec = NewDecoder(strings.NewReader(`a`))
+		err := dec.StringNull(&v)
+		assert.NotNil(t, err, "Err must not be nil")
+		assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+	})
+}
 func TestDecoderStringInvalidType(t *testing.T) {
 	json := []byte(`1`)
 	var v string

@@ -91,6 +91,34 @@ func (dec *Decoder) decodeFloat64Null(v **float64) error {
 	}
 	return dec.raiseInvalidJSONErr(dec.cursor)
 }
+func (dec *Decoder) decodeFloat64OrNull() (val float64, isNull bool, err error) {
+	for ; dec.cursor < dec.length || dec.read(); dec.cursor++ {
+		switch c := dec.data[dec.cursor]; c {
+		case ' ', '\n', '\t', '\r', ',':
+			continue
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			val, err = dec.getFloat()
+			return
+		case '-':
+			dec.cursor = dec.cursor + 1
+			val, err = dec.getFloatNegative()
+			val = -val
+			return
+		case 'n':
+			dec.cursor++
+			if err = dec.assertNull(); err == nil {
+				isNull = true
+			}
+			return
+		default:
+			dec.err = dec.makeInvalidUnmarshalErr(float64(0))
+			err = dec.skipData()
+			return
+		}
+	}
+	err = dec.raiseInvalidJSONErr(dec.cursor)
+	return
+}
 
 func (dec *Decoder) getFloatNegative() (float64, error) {
 	// look for following numbers
@@ -299,6 +327,34 @@ func (dec *Decoder) decodeFloat32Null(v **float32) error {
 	}
 	return dec.raiseInvalidJSONErr(dec.cursor)
 }
+func (dec *Decoder) decodeFloat32OrNull() (val float32, isNull bool, err error) {
+	for ; dec.cursor < dec.length || dec.read(); dec.cursor++ {
+		switch c := dec.data[dec.cursor]; c {
+		case ' ', '\n', '\t', '\r', ',':
+			continue
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			val, err = dec.getFloat32()
+			return
+		case '-':
+			dec.cursor = dec.cursor + 1
+			val, err = dec.getFloat32Negative()
+			val = -val
+			return
+		case 'n':
+			dec.cursor++
+			if err = dec.assertNull(); err == nil {
+				isNull = true
+			}
+			return
+		default:
+			dec.err = dec.makeInvalidUnmarshalErr(float32(0))
+			err = dec.skipData();
+			return
+		}
+	}
+	err = dec.raiseInvalidJSONErr(dec.cursor)
+	return
+}
 
 func (dec *Decoder) getFloat32Negative() (float32, error) {
 	// look for following numbers
@@ -493,6 +549,14 @@ func (dec *Decoder) Float64Null(v **float64) error {
 	return nil
 }
 
+// Float64OrNull is alloc-free version of Float64Null
+func (dec *Decoder) Float64OrNull() (val float64, isNull bool, err error) {
+	if val, isNull, err = dec.decodeFloat64OrNull(); err == nil {
+		dec.called |= 1
+	}
+	return
+}
+
 // Float32 decodes the JSON value within an object or an array to a *float64.
 // If next key value overflows float64, an InvalidUnmarshalError error will be returned.
 func (dec *Decoder) Float32(v *float32) error {
@@ -513,4 +577,12 @@ func (dec *Decoder) Float32Null(v **float32) error {
 	}
 	dec.called |= 1
 	return nil
+}
+
+// Float32OrNull is alloc-free version of Float32Null
+func (dec *Decoder) Float32OrNull() (val float32, isNull bool, err error) {
+	if val, isNull, err = dec.decodeFloat32OrNull(); err == nil {
+		dec.called |= 1
+	}
+	return
 }
