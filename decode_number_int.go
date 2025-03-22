@@ -1405,7 +1405,7 @@ func (dec *Decoder) Int32Null(v **int32) error {
 	return nil
 }
 
-// Int16OrNull is alloc-free version of Int32Null
+// Int16OrNull is alloc-free version of Int16Null
 func (dec *Decoder) Int16OrNull() (val int16, isNull bool, err error) {
 	if val, isNull, err = dec.decodeInt16OrNull(); err == nil {
 		dec.called |= 1
