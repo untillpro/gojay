@@ -2551,6 +2551,296 @@ func TestDecoderInt32OrNull(t *testing.T) {
 	})
 }
 
+func TestDecoderInt16OrNull(t *testing.T) {
+	testCases := []struct {
+		name           string
+		json           string
+		expectedResult int16
+		err            bool
+		errType        interface{}
+		isNull         bool
+	}{
+		{
+			name:           "basic-positive",
+			json:           "100",
+			expectedResult: 100,
+		},
+		{
+			name:           "basic-positive2",
+			json:           " 10394",
+			expectedResult: 10394,
+		},
+		{
+			name:           "basic-negative",
+			json:           "-2",
+			expectedResult: -2,
+		},
+		{
+			name:           "basic-null",
+			json:           "null",
+			expectedResult: 0,
+			isNull:         true,
+		},
+		{
+			name:           "basic-null-err",
+			json:           "nxll",
+			expectedResult: 0,
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "basic-negative-err",
+			json:           "-",
+			expectedResult: 0,
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "basic-negative-err",
+			json:           "-q",
+			expectedResult: 0,
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "basic-skip-data-err",
+			json:           "trua",
+			expectedResult: 0,
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "basic-negative2",
+			json:           "-23495",
+			expectedResult: -23495,
+		},
+		{
+			name:           "basic-big",
+			json:           " 32767",
+			expectedResult: 32767,
+		},
+		{
+			name:           "basic-big-overflow",
+			json:           " 2147483648",
+			expectedResult: 0,
+			err:            true,
+		},
+		{
+			name:           "basic-big-overflow",
+			json:           " 2147483657",
+			expectedResult: 0,
+			err:            true,
+		},
+		{
+			name:           "basic-big-overflow2",
+			json:           "21474836483",
+			expectedResult: 0,
+			err:            true,
+		},
+		{
+			name:           "basic-float",
+			json:           "2.4595",
+			expectedResult: 2,
+		},
+		{
+			name:           "basic-float2",
+			json:           "-7.8876",
+			expectedResult: -7,
+		},
+		{
+			name:           "basic-float2",
+			json:           "-7.8876a",
+			expectedResult: 0,
+			err:            true,
+		},
+		{
+			name:           "basic-exponent-positive-positive-exp",
+			json:           "1.2E2",
+			expectedResult: 120,
+		},
+		{
+			name:           "basic-exponent-positive-positive-exp1",
+			json:           "3.2e+004 ",
+			expectedResult: 32000,
+		},
+		{
+			name:           "basic-exponent-positive-positive-exp1",
+			json:           "3.2e+004",
+			expectedResult: 32000,
+		},
+		{
+			name:           "basic-exponent-positive-positive-exp2",
+			json:           "5e+03",
+			expectedResult: 5000,
+		},
+		{
+			name:           "basic-exponent-positive-positive-exp3",
+			json:           "3e+3",
+			expectedResult: 3000,
+		},
+		{
+			name:           "basic-exponent-positive-positive-exp4",
+			json:           "8e+003 ",
+			expectedResult: 8000,
+		},
+		{
+			name:           "basic-exponent-positive-negative-exp",
+			json:           "1e-2 ",
+			expectedResult: 0,
+		},
+		{
+			name:           "basic-exponent-positive-negative-exp2",
+			json:           "5E-6",
+			expectedResult: 0,
+		},
+		{
+			name:           "basic-exponent-positive-negative-exp3",
+			json:           "3e-3",
+			expectedResult: 0,
+		},
+		{
+			name:           "basic-exponent-positive-negative-exp4",
+			json:           "8e-005",
+			expectedResult: 0,
+		},
+		{
+			name:           "basic-exponent-negative-positive-exp",
+			json:           "-1e2",
+			expectedResult: -100,
+		},
+		{
+			name:           "basic-exponent-negative-positive-exp2",
+			json:           "-5e+03",
+			expectedResult: -5000,
+		},
+		{
+			name:           "basic-exponent-negative-positive-exp3",
+			json:           "-3e03",
+			expectedResult: -3000,
+		},
+		{
+			name:           "basic-exponent-negative-positive-exp4",
+			json:           "-8e+003",
+			expectedResult: -8000,
+		},
+		{
+			name:           "exponent-err-",
+			json:           "0.1e",
+			expectedResult: 0,
+			err:            true,
+		},
+		{
+			name:           "basic-exponent-err",
+			json:           "3e",
+			expectedResult: 0,
+			err:            true,
+		},
+		{
+			name:           "error3",
+			json:           "0E40",
+			expectedResult: 0,
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "error4",
+			json:           "0.E----",
+			expectedResult: 0,
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "error5",
+			json:           "0E40",
+			expectedResult: 0,
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "error6",
+			json:           "0.e-9",
+			expectedResult: 0,
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "error7",
+			json:           "-5.e-2",
+			expectedResult: 0,
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "basic-float",
+			json:           "8.32 ",
+			expectedResult: 8,
+		},
+		{
+			name:           "error",
+			json:           "83zez4",
+			expectedResult: 0,
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "error",
+			json:           "8ea00$aa5",
+			expectedResult: 0,
+			err:            true,
+			errType:        InvalidJSONError(""),
+		},
+		{
+			name:           "error2",
+			json:           "-8e+00$aa5",
+			expectedResult: 0,
+			err:            true,
+		},
+		{
+			name:           "invalid-type",
+			json:           `"string"`,
+			expectedResult: 0,
+			err:            true,
+			errType:        InvalidUnmarshalError(""),
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			dec := BorrowDecoder(strings.NewReader(testCase.json))
+			defer dec.Release()
+			val, isNull, err := dec.Int16OrNull()
+			if testCase.err {
+				if err == nil {
+					err = dec.err
+				}
+				assert.Error(t, err, "Err must not be nil")
+				if testCase.errType != nil {
+					assert.IsType(
+						t,
+						testCase.errType,
+						err,
+						fmt.Sprintf("err should be of type %s", reflect.TypeOf(err).String()),
+					)
+				}
+				return
+			}
+
+			assert.NoError(t, err, "Err must be nil")
+			if testCase.isNull {
+				assert.True(t, isNull)
+			} else {
+				assert.False(t, isNull)
+				assert.Equal(t, testCase.expectedResult, val, fmt.Sprintf("v must be equal to %d", testCase.expectedResult))
+			}
+		})
+	}
+	t.Run("decoder-api-invalid-json2", func(t *testing.T) {
+		var dec = NewDecoder(strings.NewReader(``))
+		_, _, err := dec.Int16OrNull()
+		assert.NotNil(t, err, "Err must not be nil")
+		assert.IsType(t, InvalidJSONError(""), err, "err should be of type InvalidJSONError")
+	})
+}
+
 func TestDecoderInt16(t *testing.T) {
 	testCases := []struct {
 		name           string
